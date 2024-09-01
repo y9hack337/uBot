@@ -9,24 +9,19 @@ from meval import meval
 
 os.makedirs("modules", exist_ok=True)
 
-if not os.path.exists("userbot.cfg"):
-    config = configparser.ConfigParser()
-    config['HACK337_USERBOT'] = {
-        'api_id': 'YOUR_API_ID',
-        'api_hash': 'YOUR_API_HASH',
-        'prefix_userbot': '.,ю'
-    }
-    with open('userbot.cfg', 'w', encoding = "utf-8") as configfile:
-        config.write(configfile)
-    print("Создан файл 'userbot.cfg'. Заполните конфиг!")
+load_dotenv()
+
+if not os.getenv("API_ID") or not os.getenv("API_HASH") or not os.getenv("PREFIX_USERBOT"):
+    with open('.env', 'w', encoding='utf-8') as env_file:
+        env_file.write('API_ID=YOUR_API_ID\n')
+        env_file.write('API_HASH=YOUR_API_HASH\n')
+        env_file.write('PREFIX_USERBOT=".,ю"\n')
+    print("Создан файл '.env'. Заполните конфиг!")
     exit()
 
-config = configparser.ConfigParser()
-config.read('userbot.cfg', "utf-8")
-
-api_id = int(config['HACK337_USERBOT']['api_id'])
-api_hash = config['HACK337_USERBOT']['api_hash']
-prefix_userbot = config['HACK337_USERBOT']['prefix_userbot'].split(',')
+api_id = int(os.getenv("API_ID"))
+api_hash = os.getenv("API_HASH")
+prefix_userbot = os.getenv("PREFIX_USERBOT").split(',')
 
 app = Client("my_account2", api_id=api_id, api_hash=api_hash)
 start_time = time.time()
