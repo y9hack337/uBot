@@ -118,7 +118,7 @@ async def info_command(_, message):
     await message.delete()
     ping_end_time = time.time()
     ping_time = round((ping_end_time - ping_start_time) * 1000, 1)
-    bot_name = "🤖Hack337 UserBot v2.0 Pro🤖\nTG: https://t.me/hack337userbot"
+    bot_name = "🤖Hack337 UserBot v2.2 Pro🤖\nTG: https://t.me/hack337userbot"
     caption = f"```info\n{bot_name}\nPing: {ping_time}ms\nUptime: {uptime}```"
     if info_media:
         if info_media["type"] == "photo":
