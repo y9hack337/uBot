@@ -103,12 +103,9 @@ async def info_command(_, message):
     if len(message.text.split(" ")) == 2 and message.reply_to_message:
         cmd = message.text.split(" ",1)[1]
         repl = message.reply_to_message
-        if cmd == "img" and ( repl.photo or repl.animation ):
+        if cmd == "img" and repl.photo:
             if repl.photo:
                 file_id = repl.photo.file_id
-                info_media = {"type": "photo", "file_id": file_id}
-            else:
-                file_id = repl.animation.thumbs[-1].file_id
                 info_media = {"type": "photo", "file_id": file_id}
         elif cmd == "gif" and repl.animation:
             file_id = repl.animation.file_id
