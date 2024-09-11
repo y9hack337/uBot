@@ -107,7 +107,7 @@ async def info_command(_, message):
             if repl.photo:
                 file_id = repl.photo.file_id
                 info_media = {"type": "photo", "file_id": file_id}
-        elif cmd == "gif" and repl.animation:
+        elif cmd == "img" and repl.animation:
             file_id = repl.animation.file_id
             info_media = {"type": "gif", "file_id": file_id}
         else:
