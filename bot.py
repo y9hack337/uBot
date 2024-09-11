@@ -101,18 +101,16 @@ async def help_command(client, message):
 async def info_command(_, message):
     global info_media
     if len(message.text.split(" ")) == 2 and message.reply_to_message:
-        cmd = message.text.split(" ",1)[1]
         repl = message.reply_to_message
-        if cmd == "img" and repl.photo:
+        if repl.photo:
             if repl.photo:
                 file_id = repl.photo.file_id
                 info_media = {"type": "photo", "file_id": file_id}
-        elif cmd == "img" and repl.animation:
+        elif repl.animation:
             file_id = repl.animation.file_id
             info_media = {"type": "gif", "file_id": file_id}
-        else:
-            info_media = {"type": "photo", "file_id": "https://i.imgur.com/jR5ABCc.png"}
-    
+    elif len(message.text.split(" ")) == 2:
+        info_media = {"type": "photo", "file_id": "https://i.imgur.com/jR5ABCc.png"}
     current_time = time.time()
     uptime_seconds = int(round(current_time - start_time))
     uptime = str(timedelta(seconds=uptime_seconds))
