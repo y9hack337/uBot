@@ -2,7 +2,7 @@
 <h2><img src="https://github.com/hikariatama/assets/raw/master/1326-command-window-line-flat.webp" height="54" align="middle"> Installation</h2>
 
 Simply run this command out of <b>root</b> and follow the instructions of installer:<br>
-<code>bash <(wget -qO- https://raw.githubusercontent.com/y9hack337/uBot/main/install.sh)</code><br>
+<code>. <(wget -qO- https://raw.githubusercontent.com/y9hack337/uBot/main/install.sh)</code><br>
 <br>
 <b>Manual installation (no script):</b><br>
 <code>apt update && apt install git python3 python3-pip -y && git clone https://github.com/y9hack337/uBot.git && cd uBot && pip install -r requirements.txt && bash api_change.sh && python3 bot.py</code>
