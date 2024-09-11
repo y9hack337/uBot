@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import time, random
 import configparser, asyncio
 import os, sys, subprocess
+import signal, requests
 from meval import meval
 
 os.makedirs("modules", exist_ok=True)
@@ -34,6 +35,8 @@ start_time = time.time()
 message_id, chat_id, time_int, success, fail = None, None, None, 0, 0
 
 cats = [ "≽^•⩊•^≼", "ᓚ₍ ^. .^₎", "ฅ^•ﻌ•^ฅ" ]
+
+processes = {}
 
 def load_modules():
     modules = []
@@ -80,7 +83,12 @@ async def help_command(client, message):
         help_text += f"{cicon}`{prefix}{cinfo}` - {ccomand}\n"
     help_text += (f"**Стандартные команды:**\n"
                   f"ℹ`{prefix}info` - инфо о юзерботе\n"
-                  f"⌛`{prefix}ping` - Пишет пинг.")
+                  f"⌛`{prefix}ping` - Пишет пинг\n"
+                  f"🔄`{prefix}restart` - Перезапуск юзербота\n"
+                  f"📟`{prefix}e` - Выполнение кода\n"
+                  f"⌨️`{prefix}t` - Запустить команду в системе\n"
+                  f"⛔`{prefix}kill` - Ответьте на сообщение, чтобы убить процесс\n"
+                 )
     await message.reply_text(help_text)
 
 
@@ -102,7 +110,7 @@ async def info_command(_, message):
         parse_mode=ParseMode.MARKDOWN
     )
 
-@app.on_message(filters.me & filters.command(["restart","рестарт","куыефке"], prefixes=prefix_userbot))
+@app.on_message(filters.me & filters.command(["restart","рестарт","куыефке", "кые", "rst"], prefixes=prefix_userbot))
 async def evaluate(client, message):
     msg = await message.edit('**🔄 Твой Hack337 UserBot перезагружается...**')
     restart_script(msg.id, msg.chat.id)
@@ -142,6 +150,22 @@ def load_module_msg(client, message):
             else:
                 message.edit(f"```lm\n Такой модуль уже установлен. \n```")
 
+@app.on_message(filters.me & filters.command(["ulm", "улм", "гдь"], prefixes=prefix_userbot))
+def unload_module_msg(client, message):
+    if len(message.text.split(" ")) == 2:
+        mname = message.text.split(" ",1)[1]+".py"
+        if os.path.exists("modules/" + mname):
+            message.edit(f"```ulm\n Удаление модуля... \n```")
+            try:
+                os.remove("modules/" + mname)
+            except Exception as e:
+                message.edit(f"```ulm\n Ошибка при удалении {mname}... \n```")
+            message.edit(f"```ulm\n Модуль успешно удалён. \n```")
+        else:
+            message.edit(f"```ulm\n Такой модуль не установлен. \n```")
+    else:
+        message.edit(f"```ulm\n Неверный синтаксис. \n```")
+
 @app.on_message(filters.me & filters.command(["ping", "пинг", "зштп"], prefixes=prefix_userbot))
 def ping(_, message):
     ping_start_time = time.time()
@@ -151,6 +175,23 @@ def ping(_, message):
     uptime_seconds = int(round(time.time() - start_time))
     uptime = str(timedelta(seconds=uptime_seconds))
     msg.edit(f"```ping\n 🕛Ваш пинг: {ping_time} мс\nUptime: {uptime} \n```")
+
+@app.on_message(filters.me & filters.command(["гзв", "upd", "update"], prefixes=prefix_userbot))
+def update(_, message):
+    try:
+        message.edit(f"```update\n Скачивание обновления... \n```")
+        response = requests.get("https://raw.githubusercontent.com/y9hack337/uBot/main/bot.py")
+        response.raise_for_status()
+        message.edit(f"```update\n Запись обновления в файл... \n```")
+        with open("bot.py", "wb") as f:
+            f.write(response.content)
+        message.edit(f"```update\n Обновление успешно установленно. \n Напиши .rst что бы применить изменения.```")
+    except requests.exceptions.RequestException as e:
+        message.edit(f"```update\n Ошибка при скачивании файла с GitHub... \n```")
+    except OSError as e:
+        message.edit(f"```update\n Ошибка при записи файла... \n```")
+    except:
+        message.edit(f"```update\n Ошибка... \n```")
 
 async def getattrs(client, message):
     reply = message.reply_to_message
@@ -180,6 +221,53 @@ async def evaluate(client, message):
     if callable(getattr(result, "stringify", None)):
         result = str(result.stringify())
     await message.reply_text(f'Request: \n{message.text.split(" ",1)[1]}\nResult:\n{str(result)}', parse_mode=ParseMode.DISABLED)
+
+@app.on_message(filters.me & filters.command(["terminal", "t"], prefixes=prefix_userbot))
+async def terminal_command(client, message):
+    try:
+        command = message.text.split(" ", 1)[1]
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        processes[str(message.id)] = process
+        await message.edit_text(f"⌨️<b> Системная команда: </b><code>{command}</code>\n<b>Процесс ID: </b><code>{process.pid}</code>", parse_mode=ParseMode.HTML)
+        stdout, stderr = await process.communicate()
+        result = stdout.decode('utf-8').strip()
+        error = stderr.decode('utf-8').strip()
+        return_code = process.returncode
+        output = f"📼<b> Вывод:</b>\n<code>{result if result else 'Нет вывода'}</code>"
+        if error:
+            output += f"\nОшибка:\n{error}"
+        await message.edit_text(f"⌨️<b> Системная команда: </b><code>{command}</code>\n<b>Код выхода: </b><code>{return_code}</code>\n{output}", parse_mode=ParseMode.HTML)
+    except Exception as e:
+        await message.edit_text(f"<b>Ошибка: </b><code>{e}</code>", parse_mode=ParseMode.HTML)
+    try:
+        processes.pop(str(message.id))
+    except:pass
+
+
+@app.on_message(filters.me & filters.command(["terminate", "kill"], prefixes=prefix_userbot))
+async def terminate_process(client, message):
+    try:
+        force_kill = "-f" in message.text
+        reply = message.reply_to_message
+        if not reply or str(reply.id) not in processes:
+            await message.edit_text("Не найден процесс для завершения. Ответьте на сообщение с командой.", parse_mode=ParseMode.HTML)
+            return
+        process = processes.pop(str(reply.id))
+        pid = process.pid
+        if force_kill:
+            os.kill(pid, signal.SIGKILL)
+            await message.edit_text(f"Процесс с ID {pid} был принудительно завершен.", parse_mode=ParseMode.HTML)
+        else:
+            process.terminate()  # Обычное завершение процесса
+            await message.edit_text(f"Процесс с ID {pid} был завершен.", parse_mode=ParseMode.HTML)
+        
+    except Exception as e:
+        await message.edit_text(f"Ошибка: {e}", parse_mode=ParseMode.HTML)
+
 
 def load_and_exec_modules():
     global message_id, chat_id, time_int, success, fail
