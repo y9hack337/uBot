@@ -135,8 +135,7 @@ async def info_command(_, message):
                 chat_id=message.chat.id,
                 animation=info_media["file_id"],
                 caption=caption,
-                parse_mode=ParseMode.MARKDOWN,
-                unsave=True
+                parse_mode=ParseMode.MARKDOWN
             )
 
 @app.on_message(filters.me & filters.command(["restart","рестарт","куыефке", "кые", "rst"], prefixes=prefix_userbot))
