@@ -38,6 +38,8 @@ cats = [ "≽^•⩊•^≼", "ᓚ₍ ^. .^₎", "ฅ^•ﻌ•^ฅ" ]
 
 processes = {}
 
+info_media = {"type": "photo", "file_id": "https://i.imgur.com/jR5ABCc.png"}
+
 def load_modules():
     modules = []
     amount_modules = 0
@@ -97,6 +99,23 @@ async def help_command(client, message):
 
 @app.on_message(filters.me & filters.command(["info","инфо","штащ"], prefixes=prefix_userbot))
 async def info_command(_, message):
+    global info_media
+    if len(message.text.split(" ")) == 2 and message.reply_to_message:
+        cmd = message.text.split(" ",1)[1]
+        repl = message.reply_to_message
+        if cmd == "img" and ( repl.photo or repl.animation ):
+            if repl.photo:
+                file_id = repl.photo.file_id
+                info_media = {"type": "photo", "file_id": file_id}
+            else:
+                file_id = repl.animation.thumbs[-1].file_id
+                info_media = {"type": "photo", "file_id": file_id}
+        elif cmd == "gif" and repl.animation:
+            file_id = repl.animation.file_id
+            info_media = {"type": "gif", "file_id": file_id}
+        else:
+            info_media = {"type": "photo", "file_id": "https://i.imgur.com/jR5ABCc.png"}
+    
     current_time = time.time()
     uptime_seconds = int(round(current_time - start_time))
     uptime = str(timedelta(seconds=uptime_seconds))
@@ -106,12 +125,22 @@ async def info_command(_, message):
     ping_time = round((ping_end_time - ping_start_time) * 1000, 1)
     bot_name = "🤖Hack337 UserBot v2.0 Pro🤖\nTG: https://t.me/hack337userbot"
     caption = f"```info\n{bot_name}\nPing: {ping_time}ms\nUptime: {uptime}```"
-    await app.send_photo(
-        chat_id=message.chat.id,
-        photo="https://i.imgur.com/jR5ABCc.png",
-        caption=caption,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    if info_media:
+        if info_media["type"] == "photo":
+            await app.send_photo(
+                chat_id=message.chat.id,
+                photo=info_media["file_id"],
+                caption=caption,
+                parse_mode=ParseMode.MARKDOWN
+            )
+        else:
+            await app.send_animation(
+                chat_id=message.chat.id,
+                animation=info_media["file_id"],
+                caption=caption,
+                parse_mode=ParseMode.MARKDOWN,
+                unsave=True
+            )
 
 @app.on_message(filters.me & filters.command(["restart","рестарт","куыефке", "кые", "rst"], prefixes=prefix_userbot))
 async def evaluate(client, message):
