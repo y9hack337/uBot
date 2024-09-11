@@ -118,7 +118,7 @@ async def info_command(_, message):
     await message.delete()
     ping_end_time = time.time()
     ping_time = round((ping_end_time - ping_start_time) * 1000, 1)
-    bot_name = "🤖Hack337 UserBot v2.2 Pro🤖\nTG: https://t.me/hack337userbot"
+    bot_name = "🤖Hack337 UserBot v2.0 Pro🤖\nTG: https://t.me/hack337userbot"
     caption = f"```info\n{bot_name}\nPing: {ping_time}ms\nUptime: {uptime}```"
     if info_media:
         if info_media["type"] == "photo":
@@ -265,7 +265,7 @@ async def terminal_command(client, message):
         return_code = process.returncode
         output = f"📼<b> Вывод:</b>\n<code>{result if result else 'Нет вывода'}</code>"
         if error:
-            output += f"\nОшибка:\n{error}"
+            output += f"\n🚫<b>Ошибка:</b>\n<code>{error}</code>"
         await message.edit_text(f"⌨️<b> Системная команда: </b><code>{command}</code>\n<b>Код выхода: </b><code>{return_code}</code>\n{output}", parse_mode=ParseMode.HTML)
     except Exception as e:
         await message.edit_text(f"<b>Ошибка: </b><code>{e}</code>", parse_mode=ParseMode.HTML)
