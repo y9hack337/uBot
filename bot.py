@@ -8,6 +8,7 @@ import os, sys, subprocess
 import signal, requests
 from meval import meval
 import logging
+import gc
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -45,8 +46,9 @@ processes = {}
 
 info_media = {"type": "photo", "file_id": "https://i.imgur.com/jR5ABCc.png"}
 
+loaded_modules = {}
 
-def load_modules():
+async def load_modules():
     modules = []
     amount_modules = 0
     sys.path.append(os.path.abspath("modules"))
@@ -57,11 +59,11 @@ def load_modules():
                 module = importlib.import_module(module_name)
                 for command in module.commands:
                     modules.append((command['cicon'], command['cinfo'], command['ccomand']))
+                del module
                 amount_modules += 1
             except Exception as e:
                 logger.error(f"Failed to read module {module_name} info: {e}")
-                # Отправка сообщения об ошибке
-                asyncio.create_task(app.send_message("me", f"Ошибка при загрузке модуля {module_name}: {e}"))
+                await app.send_message("me", f"Ошибка при загрузке модуля {module_name}: {e}")
     return modules, amount_modules
 
 
@@ -94,7 +96,7 @@ def restart_script(m_id, chat_id):
 async def help_command(client, message):
     try:
         await message.delete()
-        modules, amount_modules = load_modules()
+        modules, amount_modules = await load_modules()
         prefix = prefix_userbot[0]
         help_text = "**Модулей загружено: {}**\n".format(amount_modules)
         for cicon, cinfo, ccomand in modules:
@@ -109,6 +111,7 @@ async def help_command(client, message):
                       f"🆕`{prefix}update` - Обновить юзербот\n"
                       f"📥`{prefix}lm` - Установить модуль\n"
                       f"🗑️`{prefix}ulm` - Удалить модуль\n"
+                      f"📜`{prefix}lml` - Список модулей на GitHub\n"
                       )
         await message.reply_text(help_text)
     except Exception as e:
@@ -182,6 +185,7 @@ def get_github_files():
 
 @app.on_message(filters.me & filters.command(["lm", "лм", "дь"], prefixes=prefix_userbot))
 async def load_module_msg(client, message):
+    global loaded_modules
     try:
         reply = message.reply_to_message
         if reply and reply.document and len(message.text.split(" ")) == 1:
@@ -221,6 +225,7 @@ async def load_module_msg(client, message):
                             if hasattr(module, 'register_commands'):
                                 module.register_commands(client)
                                 print("--- Module " + module_name + " loaded!")
+                                loaded_modules[module_name] = module
                                 await message.edit(f"```lm\n Модуль {module_name} успешно загружен. \n```")
                         except Exception as e:
                             print(f"Failed to load module {module_name}: {e}")
@@ -268,6 +273,7 @@ async def load_module_msg(client, message):
                                     if hasattr(module, 'register_commands'):
                                         module.register_commands(client)
                                         print("--- Module " + user_module_name + " loaded!")
+                                        loaded_modules[user_module_name] = module
                                         await message.edit(f"```lm\n Модуль {user_module_name} успешно загружен. \n```")
                                 except Exception as e:
                                     print(f"Failed to load module {user_module_name}: {e}")
@@ -296,6 +302,7 @@ async def load_module_list_msg(client, message):
 
 @app.on_message(filters.me & filters.command(["ulm", "улм", "гдь"], prefixes=prefix_userbot))
 async def load_module_msg(client, message):
+    global loaded_modules
     try:
         if len(message.text.split(" ")) == 2:
             module_name = message.text.split(" ", 1)[1]
@@ -447,7 +454,7 @@ async def terminate_process(client, message):
 
 
 async def load_and_exec_modules():
-    global message_id, chat_id, time_int, success, fail
+    global message_id, chat_id, time_int, success, fail, loaded_modules
     sys.path.append(os.path.abspath("modules"))
 
     for f in os.listdir("modules"):
@@ -459,6 +466,7 @@ async def load_and_exec_modules():
                 if hasattr(module, 'register_commands'):
                     module.register_commands(app)
                     print("--- Module " + module_name + " loaded!")
+                    loaded_modules[module_name] = module
                     success += 1
             except Exception as e:
                 fail += 1
