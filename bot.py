@@ -308,34 +308,34 @@ async def terminal_command(client, message):
         )
         processes[str(message.id)] = process
         await message.edit_text(
-            f"⌨️
+            f"""⌨️
 <b> Системная команда: </b>
 <code>{command}</code>\n
 <b>Процесс ID: </b>
-<code>{process.pid}</code>",
+<code>{process.pid}</code>""",
             parse_mode=ParseMode.HTML)
         stdout, stderr = await process.communicate()
         result = stdout.decode('utf-8').strip()
         error = stderr.decode('utf-8').strip()
         return_code = process.returncode
-        output = f"📼
+        output = f"""📼
 <b> Вывод:</b>\n
 <code>{result if result else 'Нет вывода'}</code>"
         if error:
             output += f"\n🚫
 <b> Ошибка:</b>\n
-<code>{error}</code>"
+<code>{error}</code>"""
         await message.edit_text(
-            f"⌨️
+            f"""⌨️
 <b> Системная команда: </b>
 <code>{command}</code>\n
 <b>Код выхода: </b>
-<code>{return_code}</code>\n{output}",
+<code>{return_code}</code>\n{output}""",
             parse_mode=ParseMode.HTML)
     except Exception as e:
-        await message.edit_text(f"
+        await message.edit_text(f"""
 <b>Ошибка: </b>
-<code>{e}</code>", parse_mode=ParseMode.HTML)
+<code>{e}</code>""", parse_mode=ParseMode.HTML)
     try:
         processes.pop(str(message.id))
     except:
