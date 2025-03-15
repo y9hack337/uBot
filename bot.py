@@ -320,9 +320,9 @@ async def terminal_command(client, message):
         return_code = process.returncode
         output = f"""📼
 <b> Вывод:</b>\n
-<code>{result if result else 'Нет вывода'}</code>"
+<code>{result if result else 'Нет вывода'}</code>"""
         if error:
-            output += f"\n🚫
+            output += f"""\n🚫
 <b> Ошибка:</b>\n
 <code>{error}</code>"""
         await message.edit_text(
