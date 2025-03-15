@@ -178,7 +178,7 @@ async def load_module_msg(client, message):
             if name.endswith(".py"):
                 if not os.path.exists("modules/" + name):
                     await message.edit(f"```lm\n Скачивание модуля... \n```")
-                    reply._client.download_media(reply.document.file_id, "modules/" + name)
+                    await reply._client.download_media(reply.document.file_id, "modules/" + name)
                     await message.edit(f"```lm\n Поиск зависимостей... \n```")
                     with open("modules/" + name, 'r') as file:
                         lines = []
