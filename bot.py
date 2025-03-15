@@ -168,13 +168,25 @@ async def evaluate(client, message):
         logger.error(f"Error in restart_command: {e}")
         await app.send_message("me", f"Ошибка в команде restart: {e}")
 
+def get_github_files():
+    try:
+        response = requests.get(f"https://raw.githubusercontent.com/y9hack337/modules/refs/heads/main/file_list.json")
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе к API GitHub: {e}")
+        return []
+    except KeyError:
+        print("Ошибка: Неверный формат ответа от API GitHub.")
+        return []
 
 @app.on_message(filters.me & filters.command(["lm", "лм", "дь"], prefixes=prefix_userbot))
 async def load_module_msg(client, message):
     try:
         reply = message.reply_to_message
-        if reply and reply.document:
+        if reply and reply.document and len(message.text.split(" ")) == 1:
             name = reply.document.file_name
+            module_name = name[:-3]
             if name.endswith(".py"):
                 if not os.path.exists("modules/" + name):
                     await message.edit(f"```lm\n Скачивание модуля... \n```")
@@ -201,33 +213,107 @@ async def load_module_msg(client, message):
                     if errors:
                         await message.edit(f"```lm\n Ошибка при установке {', '.join(errors)} \n```")
                     else:
-                        await message.edit(f"```lm\n Модуль успешно установлен. \n```")
+                        await message.edit(f"```lm\n Модуль {module_name} успешно установлен. \n```")
+                        
+                        print("--- Loading module " + module_name + "...")
+                        try:
+                            module = importlib.import_module(module_name)
+                            if hasattr(module, 'register_commands'):
+                                module.register_commands(client)
+                                print("--- Module " + module_name + " loaded!")
+                                await message.edit(f"```lm\n Модуль {module_name} успешно загружен. \n```")
+                        except Exception as e:
+                            print(f"Failed to load module {module_name}: {e}")
+                            await message.edit(f"```lm\n Ошибка при загрузке модуля {module_name}: {e} \n```")
                 else:
-                    await message.edit(f"```lm\n Такой модуль уже установлен. \n```")
+                    await message.edit(f"```lm\n Модуль {module_name} уже установлен. \n```")
+        elif len(message.text.split(" ")) == 2:
+            user_module_name = message.text.split(" ", 1)[1]
+            modeules = get_github_files()
+            if modeules != []:
+                if user_module_name in modeules:
+                    if not os.path.exists("modules/" + user_module_name+".py"):
+                        await message.edit(f"```lm\n Скачивание модуля... \n```")
+                        response = requests.get(f"https://raw.githubusercontent.com/y9hack337/modules/refs/heads/main/{user_module_name}.py")
+                        if response.status_code == 200:
+                            with open("modules/" + user_module_name + ".py", 'wb') as file:
+                                file.write(response.content)
+                            await message.edit(f"```lm\n Поиск зависимостей... \n```")
+                            with open("modules/" + user_module_name + ".py", 'r') as file:
+                                lines = []
+                                for _ in range(3):
+                                    line = file.readline()
+                                    if not line:
+                                        break
+                                    lines.append(line.strip())
+                            errors = []
+                            for line in lines:
+                                if line.startswith("# requires: "):
+                                    pips = line.replace("# requires: ", "").split(" ")
+                                    await message.edit(f"```lm\n Установка зависимостей... \n```")
+                                    for package_name in pips:
+                                        try:
+                                            install_package(package_name)
+                                        except Exception as e:
+                                            errors.append(package_name)
+                                            await message.edit(f"```lm\n Ошибка при установке {package_name}... \n```")
+                            if errors:
+                                await message.edit(f"```lm\n Ошибка при установке {', '.join(errors)} \n```")
+                            else:
+                                await message.edit(f"```lm\n Модуль {user_module_name} успешно установлен. \n```")
+                                
+                                print("--- Loading module " + user_module_name + "...")
+                                try:
+                                    module = importlib.import_module(user_module_name)
+                                    if hasattr(module, 'register_commands'):
+                                        module.register_commands(client)
+                                        print("--- Module " + user_module_name + " loaded!")
+                                        await message.edit(f"```lm\n Модуль {user_module_name} успешно загружен. \n```")
+                                except Exception as e:
+                                    print(f"Failed to load module {user_module_name}: {e}")
+                                    await message.edit(f"```lm\n Ошибка при загрузке модуля {user_module_name}: {e} \n```")
+                        else:
+                            await message.edit(f"```lm\n Ошибка при скачивании {user_module_name} \n```")
+                    else:
+                        await message.edit(f"```lm\n Модуль {user_module_name} уже установлен. \n```")
+            else:
+                await message.edit(f"```lm\n Ошибка при запросе к GitHub. \n```")
+                
     except Exception as e:
         logger.error(f"Error in load_module_msg: {e}")
         await message.edit(f"```lm\n Ошибка при установке модуля: {e} \n```")
 
+@app.on_message(filters.me & filters.command(["lml", "лмл", "дмд"], prefixes=prefix_userbot))
+async def load_module_list_msg(client, message):
+    modules = get_github_files()
+    if modules != []:
+        out = f"**Список модулей на GitHub:**\n"
+        for module_name in modules:
+            out+=f"`.lm {module_name}`\n"
+        await message.edit(out)
+    else:
+        await message.edit(f"```lml\n Ошибка при запросе к GitHub. \n```")
 
 @app.on_message(filters.me & filters.command(["ulm", "улм", "гдь"], prefixes=prefix_userbot))
-async def unload_module_msg(client, message):
+async def load_module_msg(client, message):
     try:
         if len(message.text.split(" ")) == 2:
-            mname = message.text.split(" ", 1)[1] + ".py"
+            module_name = message.text.split(" ", 1)[1]
+            mname = module_name + ".py"
             if os.path.exists("modules/" + mname):
-                await message.edit(f"```ulm\n Удаление модуля... \n```")
+                await message.edit(f"```ulm\n Удаление модуля {module_name}... \n```")
                 try:
                     os.remove("modules/" + mname)
                 except Exception as e:
                     await message.edit(f"```ulm\n Ошибка при удалении {mname}... \n```")
-                await message.edit(f"```ulm\n Модуль успешно удалён. \n```")
+                await message.edit(f"```ulm\n Модуль {module_name} успешно удалён. \n```")
             else:
-                await message.edit(f"```ulm\n Такой модуль не установлен. \n```")
+                await message.edit(f"```ulm\n Модуль {module_name} не установлен. \n```")
         else:
             message.edit(f"```ulm\n Неверный синтаксис. \n```")
     except Exception as e:
         logger.error(f"Error in unload_module_msg: {e}")
-        await message.edit(f"```ulm\n Ошибка при удалении модуля: {e} \n```")
+        await message.edit(f"```ulm\n Ошибка при удалении модуля {module_name}: {e} \n```")
 
 
 @app.on_message(filters.me & filters.command(["ping", "пинг", "зштп"], prefixes=prefix_userbot))
