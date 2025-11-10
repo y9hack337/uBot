@@ -495,7 +495,7 @@ async def edit_restart_message():
 
 
 async def main():
-    await app.start()
+    await app.start(use_qr=True)
     await load_and_exec_modules()
     await edit_restart_message()
     await idle()
