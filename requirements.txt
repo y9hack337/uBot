@@ -2,3 +2,4 @@ kurigram
 meval
 tgcrypto
 requests
+qrcode
